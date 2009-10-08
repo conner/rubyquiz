@@ -1,3 +1,8 @@
+#!/usr/bin/env ruby
+
+# @author = Conner Peirce
+# http://rubyquiz.com quiz #14
+
 class LCDNumber
   ON = true
   OFF = false
