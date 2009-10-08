@@ -33,57 +33,75 @@ class LCDNumber
     # should verify one character, but presumably this will be called by class method
     # st LCDNumber.new( <0-9> ) will always be the case
     @number = n
-    @@size, @size = size
+    @size = size
     
   end
-class << self
-  def print(*numbers)
+
+  def self.print(numbers, s=2)
     (1..5).each do |l|
       line = ""
-      for n in numbers
-        num = LCDNumber.new(n)
+      numbers.each_char do |nS|
+        n = nS.to_i
+        num = LCDNumber.new(n,s)
         line << num.printByLine(l)
         line << " " if n != 5
       end
-      p line
-      if VROW.include?(l) then
-        x = @@size - 1
-        x.each{ p line }
-      end
+      line << "\n"
+      STDOUT << (VROW.include?(l) ? line*s : line )
     end
   end
-    
-end
-  def print
-    (1..5).each{|l| p printByLine(l)}
+  
+  # alias for print
+  def inspect
+    print
   end
   
+  # prints object, completes vertical scaling
+  def print
+    (1..5).each do |l|
+      out = printByLine(l) + "\n"
+      STDOUT << (VROW.include?(l) ? out*@size : out )
+    end
+  end
+  
+  # do scaling here
   def printByLine( line )
     
-    case line
-    when 1 then printElement(0)
-    when 2 then printElement(1) + printElement(2)
-    when 3 then printElement(3)
-    when 4 then printElement(4) + printElement(5)
-    when 5 then printElement(6)
+    if VROW.include?(line) then # scale "|"s
+      if line == 2 then
+        getSym(1) + " "*@size + getSym(2)
+      else # line is 4
+        getSym(4) + " "*@size + getSym(5)
+      end
+    else # scale "-"s
+      sym = case line
+      when 1 then getSym(0)
+      when 3 then getSym(3)
+      when 5 then getSym(6)
+      end
+      " " + sym*@size + " "
     end
   end
   
-  def printElement( el )
-    
+  # determines what symbol is appropriate
+  def getSym( el )
     case el
-    when *VERTICAL|LEFT
-      if MAPPINGS[@number][el] then "| "
-      else "  "
-      end
-    when *VERTICAL|RIGHT
-      if MAPPINGS[@number][el] then " |"
-      else "  "
-      end      
-    when *HORIZONTAL
-      if MAPPINGS[@number][el] then " -  "
-      else "    "
-      end
+    when *VERTICAL then MAPPINGS[@number][el] ? "|" : " "   
+    when *HORIZONTAL then MAPPINGS[@number][el] ? "-" : " "
     end
   end
+  
 end
+
+
+if ARGV[0] == "-s" then 
+  size = ARGV[1].to_i
+  numbers = ARGV[2]
+else
+  numbers = ARGV[0]
+  size = 2
+end
+
+LCDNumber.print(numbers, size)
+
+
