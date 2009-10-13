@@ -2,41 +2,33 @@
 
 # @author = Conner Peirce
 # http://rubyquiz.com quiz #15
-
-
+#---
+# FIX: you can't quit if there is only one AniNode
+#+++
 class AniNode
-  @query
-  attr_reader :leftNode, :rightNode, :animal
-  @@root = nil
-  @@current = nil
+  attr_reader :leftNode, :rightNode
+  @@root, @@current, @data = nil
   
   def initialize( animal )
-    @animal = animal
+    @data = animal
     @leftNode, @rightNode = nil
   end
   
-  def isLeaf?; @leftNode.nil? && @rightNode.nil?; end
+  def leaf?; @leftNode.nil? && @rightNode.nil?; end
   
-  def inspect; @animal ? @animal : @query; end
-  
-  # pokes our node, returns nodes prompt (either from query or animal)
-  def poke
-    
-    STDOUT << if @animal then "Is it an #{@animal}? "
-    elsif @query then @query
-    else # throw exception here
-    end
-  end
+  def inspect; @data; end
+
+
+  def poke; STDOUT << (leaf? ? "Is it #{@data}? " : @data + " "); end
   
   def insertNode(query, yesNode, noNode)
-    @animal = nil
-    @query = query
+    @data = query
     @rightNode = yesNode
     @leftNode = noNode
     
   end
   def self.begin
-    @@root = AniNode.new( "elephant" )
+    @@root = AniNode.new( "an elephant" )
     @@current = @@root
   end
   
@@ -45,64 +37,60 @@ class AniNode
     
     STDOUT <<   "You Win!\nWhat was the animal?\n"
     animal = gets.chomp
-    STDOUT << "A question to distinguish it from a #{AniNode.current.animal}"
+    STDOUT << "A question to distinguish it from #{@@current.inspect}: "
     query = gets.chomp
     
-    STDOUT << "For #{animal}, what is the answer to your question?" # make sure yes or no
+    STDOUT << "For #{animal}, what is the answer to your question? " # make sure yes or no
     answer = gets.chomp.to_sym
     
-    @@current.insertNode(query, AniNode.new(animal), AniNode.new(@@current.animal)) if answer == :yes
-    @@current.insertNode(query, AniNode.new(@@current.animal), AniNode.new(animal)) if answer == :no
+    @@current.insertNode(query, AniNode.new(animal), AniNode.new(@@current.inspect)) if answer == :yes
+    @@current.insertNode(query, AniNode.new(@@current.inspect), AniNode.new(animal)) if answer == :no
     
+    STDOUT << "Let us play again.\n"
     self.reset
     
   end
   
-  def self.yes?; !@@current.rightNode.nil?; end
-  def self.no?; !@@current.leftNode.nil?; end
+  def self.leaf?; @@current.leaf?; end
   def self.yes;  @@current = @@current.rightNode;  end
   def self.no; @@current = @@current.leftNode; end
   def self.current; @@current;  end
   def self.poke;    @@current.poke;  end
   def self.reset; @@current = @@root; end
-  private
   
-  #attr_accessor :leftNode, :rightNode
-  
+  def self.userWin?
+    self.poke
+    response = gets.chomp.to_sym
+    
+    response == :no
+  end
 end
 
-# put opening logic in a 'begin' method
 AniNode.begin
 
 puts "Think of an animal..."
 
 while true do
   
-  AniNode.poke
-  response = gets.chomp
-  p response
-  case response
-  when "yes"
-    if AniNode.yes? then AniNode.yes
+  if AniNode.leaf?
+    if AniNode.userWin? then AniNode.build # determine if it is their animal
     else
-      STDOUT << "I Win!\n"
+      STDOUT << "I Win. We play again.\n"
       AniNode.reset
-      # play again bullshit promprt
-      
     end
-  when "no"
-    if AniNode.no? then AniNode.no
-    else
-      AniNode.build
-      
-      # what was the animal
-      # what question, is it yes or no
-    end
-  when "quit" 
+  else
+  AniNode.poke
+  
+  response = gets.chomp.to_sym
+  
+  case response
+  when :yes then AniNode.yes
+  when :no then AniNode.no
+  when :quit
     STDOUT << "Thanks for playing!"
     break
   end
-
+  
 end
 
-#if AniNode.root then end
+end
